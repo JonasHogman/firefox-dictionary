@@ -1,0 +1,37 @@
+{
+  "manifest_version": 2,
+  "name": "Popup Dictionary",
+  "version": "0.4",
+  "description": "Adds dictionary functionality to Firefox in the style of the Google Dictionary extension for Google Chrome",
+  "icons": {
+    "48": "icons/icon48.png",
+    "96": "icons/icon96.png"
+  },
+  "browser_action": {
+    "default_icon": {
+      "19": "icons/icon19.png",
+      "38": "icons/icon38.png"
+    },
+    "default_title": "Popup Dictionary"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["dictionary.js"]
+    }
+  ],
+  "background": {
+    "scripts": ["background.js"]
+  },
+  "web_accessible_resources": ["styling/popup.html"],
+  "permissions": ["<all_urls>", "storage"],
+  "options_ui": {
+    "page": "styling/options.html",
+    "browser_style": true
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "{79dcc4ab-9400-410e-8d8f-62a8f6758002}"
+    }
+  }
+}
