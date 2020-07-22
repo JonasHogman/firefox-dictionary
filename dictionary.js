@@ -126,11 +126,6 @@ function populateIframe(selectionText, languageShorthand) {
         let phonetic = apiResponse[0].phonetic;
         let wordType = apiResponse[0].meanings[0].partOfSpeech;
         let definition = apiResponse[0].meanings[0].definitions[0].definition;
-        let audio = new Audio(
-          "https://ssl.gstatic.com/dictionary/static/sounds/oxford/" +
-            encodeURI(word) +
-            "--_gb_1.mp3"
-        );
 
         doc.getElementById("gdx-bubble-query").textContent = word;
         doc.getElementById("gdx-bubble-phonetics").textContent = phonetic;
