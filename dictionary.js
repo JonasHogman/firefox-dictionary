@@ -1,27 +1,27 @@
 "use strict";
 
-function initializePopup(item) {
+function removeExistingPopup() {
   // remove container if it already exists
-  if (document.contains(document.querySelector("#gdx-iframe"))) {
-    let tooltipElement = document.querySelector("#gdx-iframe");
-    tooltipElement.parentNode.removeChild(tooltipElement);
+  if (document.contains(document.getElementById("gdx-iframe"))) {
+    let tooltipElement = document.getElementById("gdx-iframe");
+    tooltipElement.remove();
   }
-  // remove tag around selection if it already exists
-  if (document.contains(document.querySelector("#gdx-selection"))) {
-    let selectedElement = document.querySelector("#gdx-selection");
-    let textToRestore = selectedElement.textContent;
-    selectedElement.parentNode.replaceChild(
-      document.createTextNode(textToRestore),
-      selectedElement
-    );
+}
+
+function getSelectedWord(selection) {
+  var word = selection.toString().trim();
+
+  // check that selection exists and that it contains no whitespace character
+  if (word && /\s/.test(word) === false) {
+    return word;
+  } else {
+    return false;
   }
+}
 
-  // only add event listener after double-click event to avoid mistakenly dismissing popup immediately, and delete
-  // it after container has been removed
-  document.body.addEventListener("click", dismissContainer);
-
+function getLanguageShorthand(selectedLanguage) {
   var languageShorthand = "en";
-  switch (item.language) {
+  switch (selectedLanguage.language) {
     case "english":
       languageShorthand = "en";
       break;
@@ -62,35 +62,10 @@ function initializePopup(item) {
       languageShorthand = "tr";
       break;
   }
-
-  // process current selection
-  var selection = window.getSelection();
-  var selectionText = selection ? selection.toString().trim() : null;
-
-  if (selectionText) {
-    // create span tag around selection
-    var span = document.createElement("span");
-    span.setAttribute("id", "gdx-selection");
-
-    if (selection.rangeCount) {
-      let range = selection.getRangeAt(0).cloneRange();
-      range.surroundContents(span);
-      selection.removeAllRanges();
-      selection.addRange(range);
-    }
-
-    populateIframe(selectionText, languageShorthand);
-  }
+  return languageShorthand;
 }
 
-function dismissContainer() {
-  var elem = document.querySelector("#gdx-iframe");
-  elem.parentNode.removeChild(elem);
-  document.body.removeEventListener("click", dismissContainer);
-}
-
-function populateIframe(selectionText, languageShorthand) {
-  // create iframe
+function createIframe() {
   var iframeElement = document.createElement("iframe");
   iframeElement.id = "gdx-iframe";
   iframeElement.frameBorder = "0";
@@ -98,21 +73,20 @@ function populateIframe(selectionText, languageShorthand) {
   iframeElement.src = browser.runtime.getURL("styling/popup.html");
   document.body.appendChild(iframeElement);
 
-  calculateTooltipPosition(
-    iframeElement,
-    document.getElementById("gdx-selection")
-  );
+  return iframeElement;
+}
 
+function populateIframe(languageShorthand, word, iframe) {
   var apiURL =
     "https://api.dictionaryapi.dev/api/v2/entries/" +
     encodeURI(languageShorthand) +
     "/" +
-    encodeURI(selectionText);
+    encodeURI(word);
 
   fetch(apiURL)
     .then((res) => res.json())
     .then((apiResponse) => {
-      let doc = document.getElementById("gdx-iframe").contentDocument;
+      var doc = iframe.contentDocument;
       if (apiResponse.title === "No Definitions Found") {
         doc.getElementById("gdx-bubble-query").textContent = "Not found";
         doc.getElementById("gdx-bubble-meaning").textContent =
@@ -123,54 +97,70 @@ function populateIframe(selectionText, languageShorthand) {
           "The unofficial Google Dictionary API has been rate limited by the upstream server, please try again later";
       } else {
         let word = apiResponse[0].word;
-        let phonetic = apiResponse[0].phonetic;
         let wordType = apiResponse[0].meanings[0].partOfSpeech;
         let definition = apiResponse[0].meanings[0].definitions[0].definition;
 
         doc.getElementById("gdx-bubble-query").textContent = word;
-        doc.getElementById("gdx-bubble-phonetics").textContent = phonetic;
         doc.getElementById("gdx-bubble-wordtype").textContent = wordType;
         doc.getElementById("gdx-bubble-meaning").textContent = definition;
         doc.getElementById("gdx-bubble-link").href =
           "https://www.google.com/search?q=define+" + encodeURI(word) + "";
 
-        if (languageShorthand == "en") {
-          doc.getElementById("gdx-bubble-audio-icon").onclick = function () {
-            gdxPlay();
-          };
-        }
+        iframe.height = doc.body.scrollHeight + 10;
       }
-      iframeElement.height = doc.body.scrollHeight + 10;
+      return true;
     })
     .catch((err) => {
+      console.log(err);
       throw err;
     });
 }
-function gdxPlay() {
+
+function setPronunciationAudio() {
   var chosenPronunciation = browser.storage.sync.get("pronunciation");
   chosenPronunciation.then(function (item) {
     let doc = document.getElementById("gdx-iframe").contentDocument;
     let audio = doc.getElementById("gdx-bubble-audio");
     let word = doc.getElementById("gdx-bubble-query").textContent.toLowerCase();
-    audio.src =
+
+    var url =
       "https://ssl.gstatic.com/dictionary/static/sounds/oxford/" +
       encodeURI(word) +
       "--_" +
       (item.pronunciation === "uk" ? "gb" : "us") +
       "_1.mp3";
 
-    audio.play();
+    var http = new XMLHttpRequest();
+    http.open("HEAD", url, false);
+    http.send();
+    if (http.status != 404) {
+      doc.getElementById("gdx-bubble-audio-icon").style.display = "inline";
+      doc.getElementById("gdx-bubble-audio").src = url;
+      doc.getElementById("gdx-bubble-audio-icon").onclick = function () {
+        audio.play();
+      };
+    }
   }, onError);
 }
 
-function calculateTooltipPosition(tooltipId, selection) {
-  var viewportOffset = selection.getBoundingClientRect();
+function positionIframe(iframe, selection) {
+  var span = document.createElement("span");
+  span.setAttribute("id", "gdx-selection");
 
-  const windowWidth = window.innerWidth;
-  const windowHeight = window.innerHeight;
+  let range = selection.getRangeAt(0).cloneRange();
+  range.surroundContents(span);
+  selection.removeAllRanges();
+  selection.addRange(range);
 
-  var linkHeight = selection.offsetHeight;
-  var linkWidth = selection.offsetWidth;
+  let selectedElement = document.getElementById("gdx-selection");
+
+  var viewportOffset = selectedElement.getBoundingClientRect();
+
+  var windowWidth = window.innerWidth;
+  var windowHeight = window.innerHeight;
+
+  var linkHeight = viewportOffset.height;
+  var linkWidth = viewportOffset.width;
 
   var scrollTop = window.scrollY;
   var scrollLeft = window.scrollX;
@@ -184,43 +174,70 @@ function calculateTooltipPosition(tooltipId, selection) {
   var topbottom = top < bottom ? bottom : top;
   var leftright = left < right ? right : left;
 
-  var tooltiph = 120;
-  var tooltipw = 250;
+  var iframeHeight = iframe.getBoundingClientRect().height;
+  var iframeWidth = iframe.getBoundingClientRect().width;
 
-  tooltipId.style.position = "absolute";
+  iframe.style.position = "absolute";
 
   if (topbottom === bottom && leftright === right) {
-    //done
     let yPos = top + scrollTop;
-    let xPos = left + linkWidth + 10 + scrollLeft;
-    tooltipId.style.top = yPos + "px";
-    tooltipId.style.left = xPos + "px";
+    let xPos = left + linkWidth + 5 + scrollLeft;
+    iframe.style.top = yPos + "px";
+    iframe.style.left = xPos + "px";
   } else if (topbottom === bottom && leftright === left) {
-    //done
     let yPos = top + scrollTop;
-    let xPos = right + linkWidth + 10 + scrollLeft;
-    tooltipId.style.top = yPos + "px";
-    tooltipId.style.right = xPos + "px";
+    let xPos = right + linkWidth + 5 + scrollLeft;
+    iframe.style.top = yPos + "px";
+    iframe.style.right = xPos + "px";
   } else if (topbottom === top && leftright === right) {
-    //done
-    let yPos = top - tooltiph - linkHeight / 2 + scrollTop;
-    let xPos = left + linkWidth + 10 + scrollLeft;
-    tooltipId.style.top = yPos + "px";
-    tooltipId.style.left = xPos + "px";
+    let yPos = top - iframeHeight - linkHeight / 2 + scrollTop;
+    let xPos = left + linkWidth + 5 + scrollLeft;
+    iframe.style.top = yPos + "px";
+    iframe.style.left = xPos + "px";
   } else if (topbottom === top && leftright === left) {
-    let yPos = top - tooltiph - linkHeight / 2 + scrollTop;
-    let xPos = left - tooltipw - linkWidth + scrollLeft;
-    tooltipId.style.top = yPos + "px";
-    tooltipId.style.left = xPos + "px";
+    let yPos = top - iframeHeight - linkHeight / 2 + scrollTop;
+    let xPos = left - iframeWidth - linkWidth + scrollLeft;
+    iframe.style.top = yPos + "px";
+    iframe.style.left = xPos + "px";
   }
+
+  let textToRestore = selectedElement.textContent;
+  selectedElement.parentNode.replaceChild(
+    document.createTextNode(textToRestore),
+    selectedElement
+  );
+
+  return true;
 }
 
 function onError(err) {
+  console.log(err);
   throw err;
 }
 
-document.ondblclick = function () {
-  //determine language, english is default
-  var chosenLanguage = browser.storage.sync.get("language");
-  chosenLanguage.then(initializePopup, onError);
-};
+function main() {
+  removeExistingPopup();
+
+  var selection = window.getSelection();
+  var word = getSelectedWord(selection);
+  console.log(word);
+
+  // continue if selection is valid
+  if (word) {
+    var chosenLanguage = browser.storage.sync.get("language");
+    chosenLanguage.then((res) => {
+      let languageShorthand = getLanguageShorthand(res.language);
+      let iframe = createIframe();
+
+      positionIframe(iframe, selection);
+      populateIframe(languageShorthand, word, iframe);
+
+      if (languageShorthand == "en") {
+        setPronunciationAudio();
+      }
+    });
+  }
+}
+
+document.onmouseup = main;
+document.onkeyup = main;
