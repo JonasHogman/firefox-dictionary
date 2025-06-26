@@ -144,70 +144,38 @@ function setPronunciationAudio() {
 }
 
 function positionIframe(iframe, selection) {
-  var span = document.createElement("span");
-  span.setAttribute("id", "gdx-selection");
+  if (!selection.rangeCount) return;
 
-  let range = selection.getRangeAt(0).cloneRange();
-  range.surroundContents(span);
-  selection.removeAllRanges();
-  selection.addRange(range);
+  const range = selection.getRangeAt(0).cloneRange();
+  const rect = range.getBoundingClientRect();
 
-  let selectedElement = document.getElementById("gdx-selection");
+  if (!rect) return;
 
-  var viewportOffset = selectedElement.getBoundingClientRect();
+  const scrollTop = window.scrollY || document.documentElement.scrollTop;
+  const scrollLeft = window.scrollX || document.documentElement.scrollLeft;
 
-  var windowWidth = window.innerWidth;
-  var windowHeight = window.innerHeight;
+  const margin = 10;
+  const iframeWidth = 300;  // Set a default width if not known yet
+  const iframeHeight = 150; // Set a default height if not known yet
 
-  var linkHeight = viewportOffset.height;
-  var linkWidth = viewportOffset.width;
+  let top = rect.bottom + scrollTop + margin;
+  let left = rect.left + scrollLeft;
 
-  var scrollTop = window.scrollY;
-  var scrollLeft = window.scrollX;
-
-  var top = viewportOffset.top;
-  var left = viewportOffset.left;
-
-  var bottom = windowHeight - top - linkHeight;
-  var right = windowWidth - left - linkWidth;
-
-  var topbottom = top < bottom ? bottom : top;
-  var leftright = left < right ? right : left;
-
-  var iframeHeight = iframe.getBoundingClientRect().height;
-  var iframeWidth = iframe.getBoundingClientRect().width;
-
-  iframe.style.position = "absolute";
-
-  if (topbottom === bottom && leftright === right) {
-    let yPos = top + scrollTop;
-    let xPos = left + linkWidth + 5 + scrollLeft;
-    iframe.style.top = yPos + "px";
-    iframe.style.left = xPos + "px";
-  } else if (topbottom === bottom && leftright === left) {
-    let yPos = top + scrollTop;
-    let xPos = right + linkWidth + 5 + scrollLeft;
-    iframe.style.top = yPos + "px";
-    iframe.style.right = xPos + "px";
-  } else if (topbottom === top && leftright === right) {
-    let yPos = top - iframeHeight - linkHeight / 2 + scrollTop;
-    let xPos = left + linkWidth + 5 + scrollLeft;
-    iframe.style.top = yPos + "px";
-    iframe.style.left = xPos + "px";
-  } else if (topbottom === top && leftright === left) {
-    let yPos = top - iframeHeight - linkHeight / 2 + scrollTop;
-    let xPos = left - iframeWidth - linkWidth + scrollLeft;
-    iframe.style.top = yPos + "px";
-    iframe.style.left = xPos + "px";
+  // Adjust if iframe would overflow bottom of viewport
+  if ((top + iframeHeight) > (scrollTop + window.innerHeight)) {
+    top = rect.top + scrollTop - iframeHeight - margin;
   }
 
-  let textToRestore = selectedElement.textContent;
-  selectedElement.parentNode.replaceChild(
-    document.createTextNode(textToRestore),
-    selectedElement
-  );
+  // Adjust if iframe would overflow right of viewport
+  if ((left + iframeWidth) > (scrollLeft + window.innerWidth)) {
+    left = scrollLeft + window.innerWidth - iframeWidth - margin;
+  }
 
-  return true;
+  // Apply position
+  iframe.style.position = "absolute";
+  iframe.style.top = `${top}px`;
+  iframe.style.left = `${left}px`;
+  iframe.style.zIndex = "9999";
 }
 
 function onError(err) {
@@ -228,6 +196,13 @@ function main() {
     chosenLanguage.then((res) => {
       let languageShorthand = getLanguageShorthand(res.language);
       let iframe = createIframe();
+
+      iframe.onload = () => {
+        const doc = iframe.contentDocument || iframe.contentWindow.document;
+        if (doc && doc.body) {
+          iframe.style.height = doc.body.scrollHeight + 10 + "px";
+        }
+      };
 
       positionIframe(iframe, selection);
       populateIframe(languageShorthand, word, iframe);
