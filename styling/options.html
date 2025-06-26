@@ -5,26 +5,26 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Popup Dictionary Options</title>
+  <link rel="stylesheet" href="options.css" />
 </head>
 
 <body>
-  <form>
-    <label for="language">Language</label>
-    <br />
-    <select id="language" name="language">
-      <option value="english">English</option>
-    </select>
-    <br />
-    <div id="pronunciation-selection" style="display: none;">
-      <label for="pronunciation">Pronunciation</label>
-      <br />
-      <select id="pronunciation" name="pronunciation">
-        <option value="uk">UK</option>
-        <option value="us">US</option>
+  <main>
+    <form>
+      <label for="language">Language</label>
+      <select id="language" name="language">
+        <option value="english">English</option>
       </select>
-    </div>
-    <button type="submit">Save</button>
-  </form>
+
+      <div id="pronunciation-selection" style="display: none;">
+        <label for="voiceSelect">Pronunciation Voice</label>
+        <select id="voiceSelect"></select>
+      </div>
+
+      <button type="submit">Save</button>
+      <div id="status" class="status-message" style="display: none;">✔ Settings saved</div>
+    </form>
+  </main>
   <script src="../options.js"></script>
 </body>
 

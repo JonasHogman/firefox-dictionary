@@ -65,8 +65,6 @@ function populateIframe(languageShorthand, word, iframe) {
         return;
       }
 
-      console.log("[Popup Dictionary] API response:", apiResponse);
-
       if (apiResponse.title === "No Definitions Found") {
         queryEl.textContent = "Not found";
         meaningEl.textContent = "No definition could be found for this word";
@@ -79,11 +77,11 @@ function populateIframe(languageShorthand, word, iframe) {
         wordTypeEl.textContent = entry.meanings[0].partOfSpeech;
         meaningEl.textContent = entry.meanings[0].definitions[0].definition;
         linkEl.href = `https://www.google.com/search?q=define+${encodeURIComponent(entry.word)}`;
+
         if (languageShorthand === "en") {
           setPronunciationAudio(entry.word);
         }
       }
-
       setTimeout(() => {
         if (!doc || !doc.documentElement) {
           console.error("[Popup Dictionary] Unable to size iframe: doc is invalid");
@@ -111,23 +109,19 @@ function populateIframe(languageShorthand, word, iframe) {
       console.error("[Popup Dictionary] Definition fetch failed:", err);
     });
 }
-
 function setPronunciationAudio(word) {
   if (!word) {
     console.warn("[Popup Dictionary] No word provided for pronunciation");
     return;
   }
-  console.log("[Popup Dictionary] setPronunciationAudio() called");
+  console.log("[Popup Dictionary] setPronunciationAudio() called for:", word);
 
-  browser.storage.sync.get("pronunciation").then((item) => {
-    console.log("[Popup Dictionary] Pronunciation setting:", item.pronunciation);
-
+  browser.storage.sync.get("pronunciation").then(({ pronunciation: preferredVoiceName }) => {
     const iframe = document.getElementById("gdx-iframe");
     if (!iframe) {
       console.warn("[Popup Dictionary] Iframe not found");
       return;
     }
-
     const doc = iframe.contentDocument;
     if (!doc) {
       console.warn("[Popup Dictionary] Iframe contentDocument not accessible");
@@ -135,55 +129,33 @@ function setPronunciationAudio(word) {
     }
 
     const icon = doc.getElementById("gdx-bubble-audio-icon");
-    const wordEl = doc.getElementById("gdx-bubble-query");
-
     if (!icon) {
       console.warn("[Popup Dictionary] Audio icon element not found");
       return;
     }
-    if (!wordEl) {
-      console.warn("[Popup Dictionary] Word element not found");
-      return;
-    }
-
-    const word = wordEl.textContent;
-    console.log("[Popup Dictionary] Word to pronounce:", word);
 
     icon.style.display = "inline";
 
     function speakWord() {
-      console.log("[Popup Dictionary] speakWord() called");
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(word);
 
-      if (!word) {
-        console.warn("[Popup Dictionary] No word to speak");
-        return;
+      function assignAndSpeakVoice() {
+        const voices = window.speechSynthesis.getVoices();
+        const selected = voices.find((v) => v.name === preferredVoiceName);
+        if (selected) {
+          utterance.voice = selected;
+          console.log("[Popup Dictionary] Using voice:", selected.name);
+        } else {
+          console.warn("[Popup Dictionary] Preferred voice not found, using default");
+        }
+        window.speechSynthesis.speak(utterance);
       }
 
-      window.speechSynthesis.cancel();
-
-      const utterance = new SpeechSynthesisUtterance(word);
-      const preferredRegion = item.pronunciation === "uk" ? "en-GB" : "en-US";
-
-      let voices = window.speechSynthesis.getVoices();
-      console.log("[Popup Dictionary] Voices available:", voices.length);
-
-      if (!voices.length) {
-        console.log("[Popup Dictionary] Voices not loaded yet, waiting for voiceschanged event");
-        window.speechSynthesis.addEventListener(
-          "voiceschanged",
-          () => {
-            voices = window.speechSynthesis.getVoices();
-            console.log("[Popup Dictionary] Voices loaded after event:", voices.length);
-            utterance.voice = voices.find((v) => v.lang === preferredRegion) || null;
-            console.log("[Popup Dictionary] Selected voice:", utterance.voice ? utterance.voice.name : "default");
-            window.speechSynthesis.speak(utterance);
-          },
-          { once: true }
-        );
+      if (window.speechSynthesis.getVoices().length === 0) {
+        window.speechSynthesis.addEventListener("voiceschanged", () => assignAndSpeakVoice(), { once: true });
       } else {
-        utterance.voice = voices.find((v) => v.lang === preferredRegion) || null;
-        console.log("[Popup Dictionary] Selected voice:", utterance.voice ? utterance.voice.name : "default");
-        window.speechSynthesis.speak(utterance);
+        assignAndSpeakVoice();
       }
     }
 
@@ -232,40 +204,28 @@ function main() {
     console.log("[Popup Dictionary] main() triggered");
 
     removeExistingPopup();
-    console.log("[Popup Dictionary] Existing popup (if any) removed");
 
     const selection = window.getSelection();
     const word = getSelectedWord(selection);
 
-    console.log("[Popup Dictionary] Selected text:", selection.toString());
     if (!word) {
       console.log("[Popup Dictionary] Invalid selection (likely whitespace or empty)");
       return;
     }
 
-    browser.storage.sync.get("language").then((res) => {
-      const selectedLanguage = res.language || "english";
+    browser.storage.sync.get("language").then(({ language: selectedLanguage = "english" }) => {
       const languageShorthand = getLanguageShorthand(selectedLanguage);
 
-      console.log("[Popup Dictionary] Language:", selectedLanguage, "->", languageShorthand);
-      console.log("[Popup Dictionary] Word to define:", word);
-
       const iframe = createIframe();
-      console.log("[Popup Dictionary] Iframe created");
 
       iframe.onload = () => {
-        console.log("[Popup Dictionary] Iframe loaded");
         populateIframe(languageShorthand, word, iframe);
         positionIframe(iframe, selection);
-
-        if (languageShorthand === "en") {
-          setPronunciationAudio();
-        }
       };
     }).catch((err) => {
       console.error("[Popup Dictionary] Error fetching language from storage:", err);
     });
-  }, 10); // slight delay to allow selection to settle
+  }, 10);
 }
 
 document.onmouseup = main;
