@@ -60,6 +60,7 @@ body {
   overflow-wrap: anywhere;
   white-space: normal;
   max-width: 300px;
+  margin-bottom: 5px;
 }
 
 #gdx-bubble-more {

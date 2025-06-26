@@ -41,11 +41,11 @@ function createIframe() {
 }
 function populateIframe(languageShorthand, word, iframe) {
   const apiURL = `https://api.dictionaryapi.dev/api/v2/entries/${encodeURIComponent(languageShorthand)}/${encodeURIComponent(word)}`;
-  console.log("[Popup Dictionary] Fetching definition from:", apiURL);
+  console.debug("[Popup Dictionary] Fetching definition from:", apiURL);
 
   fetch(apiURL)
     .then((res) => {
-      console.log("[Popup Dictionary] API response status:", res.status);
+      console.debug("[Popup Dictionary] API response status:", res.status);
       return res.json();
     })
     .then((apiResponse) => {
@@ -102,7 +102,7 @@ function populateIframe(languageShorthand, word, iframe) {
         iframe.style.opacity = 1;
 
         positionIframe(iframe, window.getSelection());
-        console.log("[Popup Dictionary] Popup rendered at:", iframe.style.top, iframe.style.left);
+        console.debug("[Popup Dictionary] Popup rendered at:", iframe.style.top, iframe.style.left);
       }, 50);
     })
     .catch((err) => {
@@ -114,7 +114,7 @@ function setPronunciationAudio(word) {
     console.warn("[Popup Dictionary] No word provided for pronunciation");
     return;
   }
-  console.log("[Popup Dictionary] setPronunciationAudio() called for:", word);
+  console.debug("[Popup Dictionary] setPronunciationAudio() called for:", word);
 
   browser.storage.sync.get("pronunciation").then(({ pronunciation: preferredVoiceName }) => {
     const iframe = document.getElementById("gdx-iframe");
@@ -145,7 +145,7 @@ function setPronunciationAudio(word) {
         const selected = voices.find((v) => v.name === preferredVoiceName);
         if (selected) {
           utterance.voice = selected;
-          console.log("[Popup Dictionary] Using voice:", selected.name);
+          console.debug("[Popup Dictionary] Using voice:", selected.name);
         } else {
           console.warn("[Popup Dictionary] Preferred voice not found, using default");
         }
@@ -160,7 +160,7 @@ function setPronunciationAudio(word) {
     }
 
     icon.onclick = () => {
-      console.log("[Popup Dictionary] Audio icon clicked");
+      console.debug("[Popup Dictionary] Audio icon clicked");
       speakWord();
     };
   }).catch((err) => {
@@ -171,7 +171,7 @@ function setPronunciationAudio(word) {
 function positionIframe(iframe, selection) {
   const range = selection.getRangeAt(0).cloneRange();
   const rect = range.getBoundingClientRect();
-  console.log("[Popup Dictionary] selection rect:", rect);
+  console.debug("[Popup Dictionary] selection rect:", rect);
 
   const scrollTop = window.scrollY || document.documentElement.scrollTop;
   const scrollLeft = window.scrollX || document.documentElement.scrollLeft;
@@ -201,7 +201,7 @@ function positionIframe(iframe, selection) {
 
 function main() {
   setTimeout(() => {
-    console.log("[Popup Dictionary] main() triggered");
+    console.debug("[Popup Dictionary] main() triggered");
 
     removeExistingPopup();
 
@@ -209,7 +209,7 @@ function main() {
     const word = getSelectedWord(selection);
 
     if (!word) {
-      console.log("[Popup Dictionary] Invalid selection (likely whitespace or empty)");
+      console.debug("[Popup Dictionary] Invalid selection (likely whitespace or empty)");
       return;
     }
 

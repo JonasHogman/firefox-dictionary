@@ -37,8 +37,7 @@
     "storage"
   ],
   "options_ui": {
-    "page": "styling/options.html",
-    "browser_style": true
+    "page": "styling/options.html"
   },
   "browser_specific_settings": {
     "gecko": {
