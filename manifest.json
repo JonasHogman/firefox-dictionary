@@ -16,18 +16,28 @@
   },
   "content_scripts": [
     {
-      "matches": ["<all_urls>"],
-      "js": ["dictionary.js"]
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "dictionary.js"
+      ]
     }
   ],
   "background": {
-    "scripts": ["background.js"]
+    "scripts": [
+      "background.js"
+    ]
   },
-  "web_accessible_resources": ["styling/popup.html"],
-  "permissions": ["<all_urls>", "storage"],
+  "web_accessible_resources": [
+    "styling/popup.html"
+  ],
+  "permissions": [
+    "<all_urls>",
+    "storage"
+  ],
   "options_ui": {
-    "page": "styling/options.html",
-    "browser_style": true
+    "page": "styling/options.html"
   },
   "browser_specific_settings": {
     "gecko": {
