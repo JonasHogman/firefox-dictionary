@@ -110,7 +110,7 @@ function populateIframe(languageShorthand, word, iframe) {
         iframe.style.width = width + "px";
         iframe.style.height = height + "px";
         iframe.style.visibility = "visible";
-        iframe.style.borderRadius = "12px";
+        iframe.style.borderRadius = "3px";
         iframe.style.overflow = "hidden";
         iframe.style.transition = "opacity 0.05s ease-in-out";
         iframe.style.opacity = 1;
