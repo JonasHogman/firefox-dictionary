@@ -22,18 +22,6 @@ function getSelectedWord(selection) {
 function getLanguageShorthand(selectedLanguage) {
   const languageMap = {
     english: "en",
-    hindi: "hi",
-    spanish: "es",
-    french: "fr",
-    japanese: "ja",
-    russian: "ru",
-    german: "de",
-    italian: "it",
-    korean: "ko",
-    "brazilian-portugese": "pt-BR",
-    "chinese-simplified": "zh-CN",
-    arabic: "ar",
-    turkish: "tr"
   };
 
   return languageMap[selectedLanguage] || "en";
@@ -42,8 +30,8 @@ function getLanguageShorthand(selectedLanguage) {
 function createIframe() {
   let iframe = document.createElement("iframe");
   iframe.id = "gdx-iframe";
-  iframe.frameBorder = "0";
-  iframe.scrolling = "no";
+  iframe.style.border = "none"
+  iframe.style.overflow = "hidden"
   iframe.style.opacity = 0;
   iframe.src = browser.runtime.getURL("styling/popup.html");
 

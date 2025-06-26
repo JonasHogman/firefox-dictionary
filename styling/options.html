@@ -1,40 +1,31 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Popup Dictionary Options</title>
-  </head>
-  <body>
-    <form>
-      <label for="language">Language</label>
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Popup Dictionary Options</title>
+</head>
+
+<body>
+  <form>
+    <label for="language">Language</label>
+    <br />
+    <select id="language" name="language">
+      <option value="english">English</option>
+    </select>
+    <br />
+    <div id="pronunciation-selection" style="display: none;">
+      <label for="pronunciation">Pronunciation</label>
       <br />
-      <select id="language" name="language">
-        <option value="english">English</option>
-        <option value="hindi">Hindi</option>
-        <option value="spanish">Spanish</option>
-        <option value="french">French</option>
-        <option value="japanese">Japanese</option>
-        <option value="russian">Russian</option>
-        <option value="german">German</option>
-        <option value="italian">Italian</option>
-        <option value="korean">Korean</option>
-        <option value="brazilian-portugese">Brazilian Portugese</option>
-        <option value="chinese-simplified">Chinese (Simplified)</option>
-        <option value="arabic">Arabic</option>
-        <option value="turkish">Turkish</option>
+      <select id="pronunciation" name="pronunciation">
+        <option value="uk">UK</option>
+        <option value="us">US</option>
       </select>
-      <br />
-      <div id="pronunciation-selection" style="display: none;">
-        <label for="pronunciation">Pronunciation</label>
-        <br />
-        <select id="pronunciation" name="pronunciation">
-          <option value="uk">UK</option>
-          <option value="us">US</option>
-        </select>
-      </div>
-      <button type="submit">Save</button>
-    </form>
-    <script src="../options.js"></script>
-  </body>
+    </div>
+    <button type="submit">Save</button>
+  </form>
+  <script src="../options.js"></script>
+</body>
+
 </html>
